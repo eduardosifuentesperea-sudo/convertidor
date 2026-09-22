@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertidor por Serial / MAC</title>
+    <style>
+        html, body {
+            margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100vh !important;
+            display: flex !important; flex-direction: column !important; background-color: #121214 !important;
+            font-family: sans-serif !important; overflow: hidden !important; -webkit-font-smoothing: antialiased;
+        }
+        #seccion-buscador-principal {
+            width: 100% !important; 
+            height: 52% !important; 
+            padding: 12px 24px !important; 
+            box-sizing: border-box !important;
+            overflow-y: hidden !important; 
+            border-bottom: none !important; 
+            display: flex !important; flex-direction: column !important;
+            justify-content: center !important; 
+            align-items: center !important; 
+            transition: justify-content 0.25s ease-in-out;
+        }
+        #seccion-convertidor-fijo { 
+            width: 100% !important; 
+            height: 48% !important; 
+            background: #121214 !important; 
+            box-sizing: border-box !important; 
+            display: flex !important; 
+            flex-direction: column !important;
+            align-items: center !important; 
+            justify-content: center !important; 
+        }
+        
+        .tarjeta-convertidor {
+            background: #1c1c21 !important; 
+            border: none !important; 
+            border-radius: 10px !important;
+            padding: 16px 24px !important; 
+            width: 100% !important;
+            max-width: 690px !important; 
+            box-sizing: border-box !important;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.55) !important; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            background: transparent !important; padding: 0 !important; border-radius: 0 !important;
+            box-shadow: none !important; width: 100% !important; max-width: 100% !important;
+            box-sizing: border-box; margin-top: 0px; display: flex; flex-direction: column;
+        }
+        
+        h3 { 
+            color: #4ea8de; 
+            margin: 0 auto 10px auto !important; 
+            font-size: 1.15rem; 
+            font-weight: bold; 
+            text-align: center; 
+            width: auto;
+        }
+        input[type=text] {
+            width: 100% !important; min-width: 240px !important; max-width: 320px !important;
+            margin: 0 auto 8px auto !important; padding: 10px 14px; border: 1px solid #2d2d35; 
+            border-radius: 4px; background: #121214; color: #fff; font-size: 1rem; font-weight: bold;
+            outline: none; box-sizing: border-box; letter-spacing: .5px; display: block !important; text-align: center;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        input[type=text]:focus { border-color: #4ea8de; box-shadow: 0 0 8px rgba(78,168,222,.3); }
+        
+        .btn-buscador-local {
+            width: auto !important; min-width: 240px; max-width: 320px;
+            margin: 0 auto 8px auto !important; background: #4ea8de; color: #121214; border: none; padding: 10px 14px;
+            border-radius: 4px !important; font-weight: bold; cursor: pointer; font-size: 1rem;
+            position: relative; overflow: hidden; z-index: 1; display: block; text-align: center;
+            box-sizing: border-box; text-decoration: none; transition: background-color 0.2s, color 0.2s;
+        }
+        .btn-buscador-local:hover { background: #3a93c9; color: #fff; }
+        .btn-buscador-local.buscando-activo { border: none !important; color: #fff !important; }
+        .btn-buscador-local.buscando-activo::before {
+            content: ''; position: absolute; top: -150%; left: -50%; width: 200%; height: 400%;
+            background: conic-gradient(transparent, #fff, transparent 30%);
+            animation: spin 2s linear infinite; z-index: -2;
+        }
+        .btn-buscador-local.buscando-activo::after { content: ''; position: absolute; inset: 2px; background: #121214; border-radius: 3px; z-index: -1; }
+        
+        .fila-campos-dobles { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px 15px !important; width: 100% !important; max-width: 650px !important; margin: 0 auto 4px auto !important; box-sizing: border-box !important; }
+        .fila-campos-dobles > div { margin-bottom: 0 !important; box-sizing: border-box !important; display: flex !important; }
+        
+        .botones-row { display: flex; gap: 15px; width: 100%; max-width: 650px; margin: 4px auto 2px auto; box-sizing: border-box; }
+        .btn-wrapper { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; }
+        
+        .btn-ilo { width: 100%; background: #4ea8de; color: #121214; border: none; padding: 8px 4px !important; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; text-decoration: none; transition: color .2s, background-color .2s; text-align: center; }
+        .btn-ilo:hover { color: #fff; background: #4ebd60; }
+        .btn-ilo:hover svg { fill: #fff; }
+        .btn-ilo svg { fill: #121214; transition: fill .2s; flex-shrink: 0; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .modo-header { font-size: .85rem; color: #7a7a80; text-transform: uppercase; letter-spacing: 1px; margin: 4px auto 4px auto !important; font-weight: bold; border-left: 3px solid #4ea8de; padding-left: 8px; text-align: left; width: 100% !important; max-width: 650px !important; box-sizing: border-box !important; }
+        
+        .res-tm-box-clickable { padding: 10px 12px; border: none !important; border-radius: 4px; background: #121214 !important; color: #8a8a93; margin-bottom: 0px; width: 100%; font-size: 0.95rem !important; font-weight: bold; box-sizing: border-box !important; text-align: left; letter-spacing: .5px; cursor: pointer; transition: background-color .2s, box-shadow .2s; position: relative; display: flex !important; align-items: center !important; flex: 1 !important; }
+        .res-tm-box-clickable:hover { background: #18181f !important; box-shadow: 0 0 6px rgba(78,168,222,.15); }
+        .res-tm-box-clickable span { color: #ffffff !important; word-break: break-all; }
+        .notif-copiado { color: #4ebd60; text-align: center; font-weight: bold; font-size: .9rem; margin-top: 2px; margin-bottom: 2px; min-height: 20px; transition: opacity .3s; width: 100%; }
+        
+        .res-tm-box-clickable .btn-inyectado-mas-local { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #5daefd; color: #0d0d12; border: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; line-height: 24px; text-align: center; z-index: 10; padding: 0; }
+        .res-tm-box-clickable .btn-inyectado-mas-local:hover { background: #4ca2ed; }
+
+        /* === DISEÑO DE LA LISTA FLOTANTE INFERIOR NATIVA === */
+        #ventana-multiples-ipv6 { width: 100% !important; max-width: 690px !important; height: auto !important; padding: 0; background: #1c1c21 !important; font-family: sans-serif; display: flex; flex-direction: column; overflow: hidden !important; border-radius: 10px !important; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.55) !important; margin: auto auto !important; }
+        #barra-arrastre { background: #202024; color: #ffffff; padding: 10px 14px; font-size: 14px; font-weight: bold; user-select: none; border-bottom: 1px solid #29292e; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        #tm-contador-ips { background: #2a2a35; color: #4ea8de; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-family: monospace; font-weight: bold; border: 1px solid #38444d; }
+        #contenedor-cuerpo { padding: 14px 0px 0px 0px !important; display: flex !important; flex-direction: column !important; gap: 10px !important; box-sizing: border-box !important; align-items: stretch !important; justify-content: space-between !important; overflow: hidden !important; }
+        
+        #tm-lista-contenedor { width: calc(100% - 40px) !important; margin: 0 auto !important; background: #121214; height: 165px !important; border-radius: 4px; padding: 10px; box-sizing: border-box !important; overflow-y: auto !important; display: flex; flex-direction: column; gap: 6px; }
+        .tm-item-servidor { display: flex; align-items: center; justify-content: space-between; background: #1a1a1f; border: 1px solid #292933; padding: 8px 12px; border-radius: 4px; color: #4ea8de; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; }
+        .tm-item-servidor.duplicado { border-color: #ff4a4a !important; background: #2a1414 !important; color: #ff8585 !important; }
+        .tm-texto-item { flex: 1; text-align: center; }
+        .tm-btn-borrar-item { background: transparent; border: none; color: #ff6b6b; cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
+        .tm-btn-borrar-item:hover { background: rgba(255, 107, 107, 0.15); color: #ff4a4a; }
+
+        .fila-botones { display: flex !important; gap: 0px !important; width: 100% !important; max-width: 100% !important; margin: 10px 0px 0px 0px !important; box-sizing: border-box !important; }
+        .btn-barra-inferior { padding: 14px 10px !important; cursor: pointer; font-weight: bold; font-size: 0.95rem !important; font-family: sans-serif; border: none !important; text-align: center; box-sizing: border-box; border-radius: 0px !important; }
+        #tm-btn-procesar { flex: 1 !important; background: #5daefd; color: #0d0d12; }
+        #tm-btn-procesar:hover { background: #4ca2ed; }
+        #tm-btn-excel { flex: 1; background: #1d6f42; color: #ffffff; }
+        #tm-btn-excel:hover { background: #175834; }
+        #tm-btn-limpiar { flex: 1; background: #ffffff; color: #121214; }
+        #tm-btn-limpiar:hover { background: #e6e6e6; }
+    </style>
+</head>
+<body>
+    <!-- El puente se carga en la primera línea del cuerpo para evitar desfases en Edge -->
+    <div id="puente-datos-tm" style="display:none"></div>
+
+    <div id="seccion-buscador-principal">
+        <div class="tarjeta-convertidor">
+            <div class="container">
+                <h3>Convertidor por Serial / MAC</h3>
+                <input type="text" id="serial-input" placeholder="Ingresa Serial o dirección MAC..." autocomplete="off" autofocus>
+                <button id="btn-buscar" class="btn-buscador-local">Buscar y Convertir</button>
+                <div id="area-resultados"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN INFERIOR COMPLETA CON EL CONTENEDOR INTELIGENTE NATIVO -->
+    <div id="seccion-convertidor-fijo" style="display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; padding: 12px 24px !important;">
+        <div id="ventana-multiples-ipv6">
+            <div id="barra-arrastre"><span>⋮⋮ Procesar Múltiples IPv6</span><span id="tm-contador-ips">0 IPs</span></div>
+            <div id="contenedor-cuerpo">
+                <div id="tm-lista-contenedor"></div>
+                <div class="fila-botones">
+                    <button id="tm-btn-procesar" class="btn-barra-inferior">Abrir Todas</button>
+                    <button id="tm-btn-excel" class="btn-barra-inferior">Excel</button>
+                    <button id="tm-btn-limpiar" class="btn-barra-inferior">Limpiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Arreglo en memoria para gestionar dinámicamente los servidores agregados
+       window.tmListaServidores = [];
+    window.tmColaDeBusqueda = [];
+    window.tmProcesandoMasivo = false;
+
+    const puente = document.getElementById('puente-datos-tm'),
+          inputElement = document.getElementById('serial-input'),
+          btnBuscar = document.getElementById('btn-buscar'),
+          listaVisualContenedor = document.getElementById('tm-lista-contenedor');
+          
+    inputElement.addEventListener('click', () => inputElement.select());
+
+    inputElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            btnBuscar.click();
+        }
+    });
+
+    // FUNCIÓN DE COLA: Toma el siguiente equipo de la lista y despierta a Tampermonkey
+    function procesarSiguienteEnCola() {
+        if (window.tmColaDeBusqueda.length === 0) {
+            window.tmProcesandoMasivo = false;
+            btnBuscar.classList.remove('buscando-activo');
+            btnBuscar.innerText = 'Buscar y Convertir';
+            return;
+        }
+
+        window.tmProcesandoMasivo = true;
+        const siguienteSN = window.tmColaDeBusqueda.shift();
+        
+        btnBuscar.classList.add('buscando-activo');
+        btnBuscar.innerText = `Buscando (${window.tmColaDeBusqueda.length + 1} pendientes)...`;
+
+        if (puente) {
+            puente.setAttribute('data-sn-actual', siguienteSN.toUpperCase());
+            puente.setAttribute('data-buscar-sn', siguienteSN);
+        }
+    }
+    function calcularIPv6Local(macLimpia) {
+        let l = macLimpia.replace(/[:.#\s-]/g, '').toLowerCase();
+        if (l.length !== 12) return "N/A";
+        let e = l.substring(0, 6) + "fffe" + l.substring(6, 12);
+        let b = (parseInt(e.substring(0, 2), 16) ^ 0x02).toString(16).padStart(2, '0') + e.substring(2);
+        let ip = "fe80::" + b.substring(0, 4) + ":" + b.substring(4, 8) + ":" + b.substring(8, 12) + ":" + b.substring(12, 16);
+        return ip.replace(/:0{1,3}/g, ':');
+    }
+
+    function copiar(elemento, texto, mensaje) {
+        navigator.clipboard.writeText(texto).then(() => {
+            const msgBox = document.getElementById('msg-copiado');
+            if (msgBox) {
+                msgBox.innerText = mensaje;
+                msgBox.style.opacity = "1";
+                setTimeout(() => { msgBox.style.opacity = "0"; }, 2000);
+            }
+        });
+    }
+
+    function actualizarListaVisual() {
+        if (!listaVisualContenedor) return;
+        listaVisualContenedor.innerHTML = '';
+
+        const conteoIps = {};
+        window.tmListaServidores.forEach(s => {
+            if (s.ip && s.ip !== "N/A" && s.ip !== "NO ENCONTRADO") {
+                conteoIps[s.ip] = (conteoIps[s.ip] || 0) + 1;
+            }
+        });
+
+        window.tmListaServidores.forEach((servidor, indice) => {
+            const fila = document.createElement('div');
+            const esDuplicado = servidor.ip !== "N/A" && servidor.ip !== "NO ENCONTRADO" && conteoIps[servidor.ip] > 1;
+            
+            fila.className = `tm-item-servidor ${esDuplicado ? 'duplicado' : ''}`;
+            fila.innerHTML = `
+    <div class="tm-texto-item">SN: ${servidor.sn}  |  [${servidor.ip}]  |  Pwd: ${servidor.pwd}</div>
+    <button class="tm-btn-borrar-item" data-index="${indice}" title="Eliminar este servidor">🗑️</button>
+`;
+
+
+            fila.querySelector('.tm-btn-borrar-item').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const idx = parseInt(this.getAttribute('data-index'));
+                window.tmListaServidores.splice(idx, 1);
+                actualizarListaVisual();
+            });
+
+            listaVisualContenedor.appendChild(fila);
+        });
+
+        const contadorElemento = document.getElementById('tm-contador-ips');
+        if (contadorElemento) {
+            const total = window.tmListaServidores.length;
+            contadorElemento.innerText = total === 1 ? "1 IP" : `${total} IPs`;
+        }
+    }
+    function pintarInterfaz(macDed, ipDed, macSha, ipSha, contrasena) {
+        btnBuscar.classList.remove('buscando-activo');
+        btnBuscar.innerText = 'Buscar y Convertir';
+        
+        let ipCalculadaDed = (ipDed === "N/A" || !ipDed) ? calcularIPv6Local(macDed) : ipDed;
+        let ipCalculadaSha = (ipSha === "N/A" || !ipSha) ? calcularIPv6Local(macSha) : ipSha;
+
+        const panelBuscador = document.getElementById('seccion-buscador-principal');
+        const tarjeta = document.querySelector('.tarjeta-convertidor');
+        if (panelBuscador && tarjeta) {
+            panelBuscador.style.setProperty('justify-content', 'flex-start', 'important');
+            tarjeta.style.setProperty('margin-top', '4px', 'important');
+            tarjeta.style.setProperty('margin-bottom', '4px', 'important');
+        }
+        
+        const ico = '<svg width="13" height="13" viewBox="0 0 24 24"><path d="M16 7h-1V5c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2v2H8c-1.1 0-2 .9-2 2v4c0 2.21 1.79 4 4 4h1v3h2v-3h1c2.21 0 4-1.79 4-4V9c0-1.1-.9-2-2-2zm-5-2h2v2h-2V5zm5 8c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V9h8v4z"/></svg>';
+        
+        document.getElementById('area-resultados').innerHTML = `
+            <div class="modo-header">Información iLO</div>
+            <div class="fila-campos-dobles">
+                <div id="c-mac" class="res-tm-box-clickable">MAC: <span style="color:#4ea8de;">${macDed}</span></div>
+                <div id="c-ip" class="res-tm-box-clickable" style="padding-right: 45px;">IPv6: <span style="color:#4ea8de;">${ipCalculadaDed}</span><button id="tm-btn-autounir" class="btn-inyectado-mas-local">+</button></div>
+                <div id="c-user" class="res-tm-box-clickable">User: <span style="color:#4ea8de;">Administrator</span></div>
+                <div id="c-pass" class="res-tm-box-clickable">Password: <span style="color:#4ea8de;">${contrasena}</span></div>
+            </div>
+            <div id="msg-copiado" class="notif-copiado" style="opacity:0"></div>
+            <div class="modo-header">ACCESOS A ILO</div>
+            <div class="botones-row">
+                <div class="btn-wrapper"><a class="btn-ilo" href="https://[${ipCalculadaDed}]" target="_blank">${ico} Dedicated</a></div>
+                <div class="btn-wrapper"><a class="btn-ilo" href="https://[${ipCalculadaSha}]" target="_blank">${ico} Shared</a></div>
+            </div>
+        `;
+
+        document.getElementById('c-mac').addEventListener('click', () => copiar(document.getElementById('c-mac'), macDed, "✓ ¡MAC Copiada!"));
+        document.getElementById('c-ip').addEventListener('click', (e) => {
+            if(e.target.id === 'tm-btn-autounir') return;
+            copiar(document.getElementById('c-ip'), '['+ipCalculadaDed+']', "✓ ¡IPv6 Copiada!");
+        });
+        document.getElementById('c-user').addEventListener('click', () => copiar(document.getElementById('c-user'), 'Administrator', "✓ ¡Usuario Copiado!"));
+        document.getElementById('c-pass').addEventListener('click', () => copiar(document.getElementById('c-pass'), contrasena, "✓ ¡Password Copiado!"));
+
+        const btnMasLocal = document.getElementById('tm-btn-autounir');
+        if (btnMasLocal) {
+            btnMasLocal.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const snActual = puente.getAttribute('data-sn-actual') || inputElement.value.trim().toUpperCase() || "N/A";
+                window.tmListaServidores.push({ sn: snActual, ip: ipCalculadaDed, pwd: contrasena || "N/A" });
+                actualizarListaVisual();
+            });
+        }
+    }
+
+      document.getElementById('tm-btn-procesar').addEventListener('click', () => {
+        if (window.tmListaServidores.length === 0) {
+            alert('No hay direcciones IPv6 en la lista para procesar.');
+            return;
+        }
+        
+        // CORRECCIÓN TOTAL: Usamos .slice().reverse() para procesar la lista de abajo hacia arriba.
+        // De esta manera, el primer servidor de tu lista terminará siendo la primera pestaña al lado del convertidor.
+        const listaIpsParaAbrir = window.tmListaServidores
+            .filter(s => s.ip && s.ip !== "N/A" && s.ip !== "NO ENCONTRADO")
+            .slice()
+            .reverse() 
+            .map(s => s.ip)
+            .join(',');
+
+        if (listaIpsParaAbrir && puente) {
+            puente.setAttribute('data-abrir-masivo-ips', listaIpsParaAbrir);
+        }
+    });
+
+
+    document.getElementById('tm-btn-limpiar').addEventListener('click', () => {
+        window.tmListaServidores = [];
+        actualizarListaVisual();
+    });
+
+    document.getElementById('tm-btn-excel').addEventListener('click', () => {
+        if (window.tmListaServidores.length === 0) return alert('La lista está vacía.');
+        let csvContenido = `sep=;\nSerial Number;Direccion IPv6;Password\n`;
+        window.tmListaServidores.forEach(s => { csvContenido += `${s.sn};${s.ip};${s.pwd}\n`; });
+        const blob = new Blob([csvContenido], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.setAttribute("href", URL.createObjectURL(blob));
+        link.setAttribute("download", "lista_ipv6_ilo.csv");
+        link.click();
+    });
+
+    // FUNCIÓN NUEVA: Limpia la pantalla superior para evitar confusiones al procesar lotes
+    function limpiarInterfazSuperior() {
+        const panelResultados = document.getElementById('area-resultados');
+        if (panelResultados) {
+            panelResultados.innerHTML = ''; // Borra todas las tarjetas de datos de arriba
+        }
+        // Regresa el buscador a su posición original centrada
+        const panelBuscador = document.getElementById('seccion-buscador-principal');
+        const tarjeta = document.querySelector('.tarjeta-convertidor');
+        if (panelBuscador && tarjeta) {
+            panelBuscador.style.setProperty('justify-content', 'center', 'important');
+            tarjeta.style.setProperty('margin-top', '0px', 'important');
+            tarjeta.style.setProperty('margin-bottom', '0px', 'important');
+        }
+    }
+
+    // REPARACIÓN DEL BUSCADOR: Separador inteligente corregido
+    
+        btnBuscar.addEventListener('click', () => {
+        const valor = inputElement.value.trim();
+        if (!valor) return;
+
+        // 1. DETECTOR MULTILÍNEA O ESPACIOS (Listas masivas de Excel)
+        if (valor.includes('\n') || valor.includes('\r') || valor.includes(' ') || valor.includes('\t')) {
+            const lineasExcel = valor.split(/[\r\n\s\t]+/).map(l => l.trim()).filter(l => l.length > 0);
+            
+            if (lineasExcel.length > 1) {
+                limpiarInterfazSuperior();
+
+                const listaSNs = [];
+                lineasExcel.forEach(elemento => {
+                    let elementoLimpio = elemento.replace(/[:.#\s-]/g, '');
+                    
+                    // Regla A: Es una IPv6 válida (contiene fe80::)
+                    if (elemento.match(/fe80::[0-9a-fA-F:]+/)) {
+                        let ipLimpiaSinCorchetes = elemento.replace(/[\[\]]/g, '');
+                        window.tmListaServidores.push({ sn: "N/A", ip: ipLimpiaSinCorchetes, pwd: "N/A" });
+                    } 
+                    // Regla B: DIRECCIÓN MAC REAL (12 dígitos, formato Hexadecimal estricto de la A a la F y 0 al 9)
+                    // Excluye automáticamente prefijos de Po y Modelos conocidos
+                    else if (elementoLimpio.length === 12 && /^[0-9a-fA-F]{12}\$/.test(elementoLimpio)) {
+                        
+                        // Escudo contra prefijos de Po y Modelos numéricos de 12 dígitos
+                        const esTextoBasura = elementoLimpio.startsWith('1000') || 
+                                              elementoLimpio.startsWith('1598') || 
+                                              elementoLimpio.startsWith('1720');
+
+                        if (!esTextoBasura) {
+                            const macLimpiaItem = elementoLimpio.toUpperCase();
+                            const ipDedCalculada = calcularIPv6Local(macLimpiaItem);
+                            window.tmListaServidores.push({ sn: "N/A", ip: ipDedCalculada, pwd: "N/A" });
+                        }
+                    } 
+                    // Regla C: NÚMERO DE SERIE SEGURO (10 caracteres y comienza forzosamente con '3M')
+                    else if (elemento.length === 10 && (elemento.startsWith('3M') || elemento.startsWith('3m'))) {
+                        listaSNs.push(elemento);
+                    }
+                    // Todo lo demás (fechas, Po, Modelos WG/IG/YC/YS/YG/WS/1000/1598, etc.) se descarta en silencio
+                });
+
+                actualizarListaVisual();
+
+                if (listaSNs.length > 0) {
+                    window.tmColaDeBusqueda = window.tmColaDeBusqueda.concat(listaSNs);
+                    inputElement.value = ''; 
+                    if (!window.tmProcesandoMasivo) {
+                        procesarSiguienteEnCola();
+                    }
+                } else {
+                    inputElement.value = ''; 
+                }
+                return;
+            }
+        }
+
+        // --- ENTRADAS INDEPENDIENTES DE UNA SOLA PIEZA ---
+        if (window.tmProcesandoMasivo) return alert('Espera a que termine el procesamiento masivo.');
+
+        // Filtro A: Una sola IPv6 manual
+        if (valor.match(/fe80::[0-9a-fA-F:]+/)) {
+            limpiarInterfazSuperior();
+            inputElement.value = '';
+            let ipLimpiaSinCorchetes = valor.replace(/[\[\]]/g, '');
+            window.tmListaServidores.push({ sn: "N/A", ip: ipLimpiaSinCorchetes, pwd: "N/A" });
+            actualizarListaVisual();
+            return;
+        }
+
+        let macLimpia = valor.replace(/[:.#\s-]/g, '');
+        // Filtro B: Una sola dirección MAC válida (12 caracteres Hexadecimales estrictos)
+        if (macLimpia.length === 12 && /^[0-9a-fA-F]{12}\$/.test(macLimpia)) {
+            
+            const esBasuraIndividual = macLimpia.startsWith('1000') || 
+                                       macLimpia.startsWith('1598') || 
+                                       macLimpia.startsWith('1720');
+
+            if (!esBasuraIndividual) {
+                inputElement.value = ''; 
+                const macDed = macLimpia.toUpperCase();
+                let valorDecimal = parseInt(macDed, 16) + 1;
+                const macSha = valorDecimal.toString(16).toUpperCase().padStart(12, '0');
+                const ipDed = calcularIPv6Local(macDed);
+                const ipSha = calcularIPv6Local(macSha);
+
+                pintarInterfaz(macDed, ipDed, macSha, ipSha, "N/A");
+                
+                if (puente) puente.setAttribute('data-resultado-local', `${macDed}|${ipDed}|${macSha}|${ipSha}|N/A|N/A`);
+                return;
+            }
+        }
+
+        // Filtro C: Un solo SN válido (10 caracteres que inicien con 3M)
+        if (valor.length === 10 && (valor.startsWith('3M') || valor.startsWith('3m'))) {
+            const panelResultados = document.getElementById('area-resultados');
+            if (panelResultados) {
+                panelResultados.innerHTML = `
+                    <div style="text-align: center; color: #7a7a80; font-weight: bold; margin-top: 15px; font-size: 0.95rem; letter-spacing: 0.5px;">
+                        Buscando informacion del servidor, por favor espera...
+                    </div>`;
+            }
+
+            btnBuscar.classList.add('buscando-activo');
+            btnBuscar.innerText = 'Buscando...';
+
+            if (puente) {
+                puente.setAttribute('data-sn-actual', valor.toUpperCase());
+                puente.setAttribute('data-buscar-sn', valor);
+            }
+        } else {
+            alert('Error: El texto ingresado no pertenece a un formato válido (SN de 10 letras que inicie con 3M, MAC de 12 dígitos hexadecimales o IPv6).');
+            inputElement.value = '';
+            inputElement.focus();
+        }
+    });
+
+
+        setInterval(() => {
+        if (puente) {
+            const resultado = puente.getAttribute('data-resultado');
+            if (resultado) {
+                puente.removeAttribute('data-resultado');
+                const snActual = puente.getAttribute('data-sn-actual') || "N/A";
+
+                if (resultado === 'ERROR') {
+                    window.tmListaServidores.push({ sn: snActual, ip: "NO ENCONTRADO", pwd: "N/A" });
+                    actualizarListaVisual();
+                } else {
+                    const datos = resultado.split('|');
+                    if (datos.length >= 5) {
+                        // Si la base de datos no arrojó IP válida, la calculamos usando la MAC devuelta en datos[0]
+                        let ipFinal = (datos[1] === "N/A" || !datos[1]) ? calcularIPv6Local(datos[0]) : datos[1];
+                        
+                        if (window.tmProcesandoMasivo) {
+                            window.tmListaServidores.push({ sn: snActual, ip: ipFinal, pwd: datos[4] || "N/A" });
+                            actualizarListaVisual();
+                        } else {
+                            let macShaCalculada = (parseInt(datos[0], 16) + 1).toString(16).toUpperCase().padStart(12, '0');
+                            let ipShaCalculada = calcularIPv6Local(macShaCalculada);
+                            pintarInterfaz(datos[0], ipFinal, macShaCalculada, ipShaCalculada, datos[4]);
+                            puente.setAttribute('data-resultado-local', `${datos[0]}|${ipFinal}|${macShaCalculada}|${ipShaCalculada}|${datos[4]}|${snActual}`);
+                        }
+                    }
+                }
+
+                if (window.tmProcesandoMasivo) {
+                    setTimeout(() => { procesarSiguienteEnCola(); }, 250);
+                }
+            }
+        }
+    }, 300);
+    </script>
+</body>
+</html>
